@@ -9,13 +9,18 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('origin_account_id')->nullable()->constrained('accounts');
+            $table->foreignId('destination_account_id')->nullable()->constrained('accounts');
+            $table->decimal('amount', 12, 2);
+            $table->enum('type', ['transfer', 'deposit', 'withdraw']);
             $table->timestamps();
         });
     }
+
 
     /**
      * Reverse the migrations.
