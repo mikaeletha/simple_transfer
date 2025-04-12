@@ -1,77 +1,67 @@
 <?php
 
-// namespace App\Http\Controllers;
-// use App\Http\Requests\TransferRequest;
-// use App\Models\Account;
-// use App\Http\Controllers\Controller;
-// use App\Services\TransferService;
-// use Illuminate\Http\JsonResponse;
-
 namespace App\Http\Controllers;
-
-use App\Http\Requests\TransferRequest;
 use App\Services\TransferService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use DomainException;
+use Exception;
+use Illuminate\Support\Facades\Validator;
 
 
 class TransferController extends Controller
 {
-    protected TransferService $transferService;
+    protected $transferService;
 
     public function __construct(TransferService $transferService)
     {
         $this->transferService = $transferService;
     }
 
-    public function transfer(TransferRequest $request): JsonResponse
+    private function validateTransfer(Request $request): \Illuminate\Contracts\Validation\Validator
     {
-        try {
-            // Dispara a transferência com as regras e validações
-            // $transaction = $this->transferService->transfer(
-            //     $request->payer,
-            //     $request->payee,
-            //     $request->value
-            // );
-            $validated = $request->validated();
+        return Validator::make($request->all(), [
+            'payer' => 'required|exists:accounts,id',
+            'payee' => 'required|exists:accounts,id|different:payer',
+            'value' => 'required|numeric|min:0.01',
+        ], [
+            'payer.required' => 'O campo pagador é obrigatório.',
+            'payer.exists' => 'O pagador informado não existe.',
+            'payee.required' => 'O campo recebedor é obrigatório.',
+            'payee.exists' => 'O recebedor informado não existe.',
+            'payee.different' => 'O pagador e o recebedor devem ser diferentes.',
+            'value.required' => 'O campo valor é obrigatório.',
+            'value.numeric' => 'O campo valor deve ser numérico.',
+            'value.min' => 'O valor mínimo para transferência é 0.01.',
+        ]);
+    }
 
+    public function transfer(Request $request): JsonResponse
+    {
+        $validator = $this->validateTransfer($request);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            logger()->info('Dados da requisição:', $request->all());
             $transaction = $this->transferService->transfer(
-                $validated['payer'],
-                $validated['payee'],
-                $validated['value']
+                $request->input('payer'),
+                $request->input('payee'),
+                $request->input('value')
             );
 
             return response()->json([
-                'success' => true,
-                'message' => 'Transferência realizada com sucesso.',
-                'data' => $transaction
-            ], 201);
+                'message' => 'Transferência realizada com sucesso!',
+                'data' => $transaction,
+            ]);
         } catch (\DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            logger()->error('Erro de domínio:', ['message' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            // Erro interno inesperado
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao processar a transferência.',
-                'error' => $e->getMessage(),
-            ], 500);
+            logger()->error('Erro interno do servidor:', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'Erro interno do servidor.'], 500);
         }
     }
-
-    // public function transfer(TransferRequest $request): JsonResponse
-    // {
-    //     try {
-    //         $amount = $request->input('value');
-    //         $payer = Account::findOrFail($request->input('payer'));
-    //         $payee = Account::findOrFail($request->input('payee'));
-
-    //         $this->transferService->execute($amount, $payer, $payee);
-
-    //         return response()->json(['message' => 'Transferência realizada com sucesso!'], 200);
-    //     } catch (\Exception $e) {
-    //         return response()->json(['error' => $e->getMessage()], 400);
-    //     }
-    // }
 }
