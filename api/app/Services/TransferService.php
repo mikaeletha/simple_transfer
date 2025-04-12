@@ -31,13 +31,13 @@ class TransferService
 
     private function validateTransfer(Account $payer, Account $payee, float $value): void
     {
-        $payer = User::find($payer->user_id);
-        if ($payer->is_supplier) {
+        $payer_user = User::find($payer->user_id);
+        if ($payer_user->is_supplier) {
             throw new DomainException('Fornecedores não podem realizar transferências.');
         }
 
         if ($payer->balance < $value) {
-            throw new DomainException('Saldo insuficiente para realizar a transferência.');
+            throw new DomainException('Saldo insuficiente para realizar a transferência. Seu saldo é: R$'.$payer->balance);
         }
 
         if ($payer->id === $payee->id) {
