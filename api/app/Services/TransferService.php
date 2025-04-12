@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use DomainException;
@@ -30,6 +31,7 @@ class TransferService
 
     private function validateTransfer(Account $payer, Account $payee, float $value): void
     {
+        $payer = User::find($payer->user_id);
         if ($payer->is_supplier) {
             throw new DomainException('Fornecedores não podem realizar transferências.');
         }
