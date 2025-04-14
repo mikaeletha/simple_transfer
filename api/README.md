@@ -22,7 +22,7 @@ Esta API foi desenvolvida com Laravel 11 e tem como objetivo simular um sistema 
 
 ---
 
-## 📦 Tecnologias utilizadas
+## Tecnologias utilizadas
 
 - PHP 8.3
 - Laravel 11
@@ -38,28 +38,48 @@ Esta API foi desenvolvida com Laravel 11 e tem como objetivo simular um sistema 
 1. Clone o repositório:
 ```bash
 git clone https://github.com/mikaeletha/simple_transfer
-cd simple_transfer
-
+cd simple_transfer/api
+```
 2. Instale as dependências:
 ```bash
 composer install
-
+```
 3. Copie o arquivo .env.example e configure:
 ```bash
 cp .env.example .env
-
+```
 4. Gere a chave da aplicação:
 ```bash
 php artisan key:generate
-
+```
 5. Configure as credenciais do banco de dados no .env
 
 6. Rode as migrations e os seeders para popular o banco:
 ```bash
 php artisan migrate --seed
-
+```
 7. Inicie o servidor local:
-
 ```bash
 php artisan serve
+```
 A API estará disponível em: http://localhost:8000
+
+## Endpoints
+
+| Método | Rota          | Descrição                         |
+|--------|---------------|-----------------------------------|
+| POST   | /api/transfer | Realiza uma transferência         |
+| GET    | /api/users    | Lista todos os usuários           |
+
+
+## Exemplo de requisição
+
+### POST /api/transfer
+
+```json
+{
+  "value": 100.0,
+  "payer": 4,
+  "payee": 15
+}
+```
