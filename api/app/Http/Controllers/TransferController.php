@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 use App\Services\TransferService;
+use App\Services\UserService;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use DomainException;
@@ -12,10 +14,16 @@ use Illuminate\Support\Facades\Validator;
 class TransferController extends Controller
 {
     protected $transferService;
+    protected $userService;
 
-    public function __construct(TransferService $transferService)
+    // public function __construct(TransferService $transferService)
+    // {
+    //     $this->transferService = $transferService;
+    // }
+    public function __construct(TransferService $transferService, UserService $userService)
     {
         $this->transferService = $transferService;
+        $this->userService = $userService;
     }
 
     private function validateTransfer(Request $request): \Illuminate\Contracts\Validation\Validator
@@ -63,5 +71,10 @@ class TransferController extends Controller
             logger()->error('Erro interno do servidor:', ['message' => $e->getMessage()]);
             return response()->json(['error' => 'Erro interno do servidor.'], 500);
         }
+    }
+
+    public function getUsers()
+    {
+        return $this->userService->getCustomUserList(); 
     }
 }
