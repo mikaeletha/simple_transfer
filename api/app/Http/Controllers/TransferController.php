@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 use App\Services\TransferService;
-use App\Services\UserService;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use DomainException;
@@ -14,19 +12,13 @@ use Illuminate\Support\Facades\Validator;
 class TransferController extends Controller
 {
     protected $transferService;
-    protected $userService;
 
-    // public function __construct(TransferService $transferService)
-    // {
-    //     $this->transferService = $transferService;
-    // }
-    public function __construct(TransferService $transferService, UserService $userService)
+    public function __construct(TransferService $transferService)
     {
         $this->transferService = $transferService;
-        $this->userService = $userService;
     }
 
-    private function validateTransfer(Request $request): \Illuminate\Contracts\Validation\Validator
+    private function validateTransfer(Request $request)
     {
         return Validator::make($request->all(), [
             'payer' => 'required|exists:accounts,id',
@@ -73,8 +65,4 @@ class TransferController extends Controller
         }
     }
 
-    public function getUsers()
-    {
-        return $this->userService->getCustomUserList(); 
-    }
 }
