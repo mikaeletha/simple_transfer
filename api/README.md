@@ -52,17 +52,20 @@ cp .env.example .env
 ```bash
 php artisan key:generate
 ```
-5. Configure as credenciais do banco de dados no .env
+5 . Crie a base de dados no MySQL:
+```sql
+CREATE DATABASE simple_transfer;
+```
+6. Configure as credenciais do banco de dados no .env
 
-6. Rode as migrations e os seeders para popular o banco:
+7. Rode as migrations e os seeders para popular o banco:
 ```bash
 php artisan migrate --seed
 ```
-7. Inicie o servidor local:
+8. Inicie o servidor local:
 ```bash
 php artisan serve
 ```
-A API estará disponível em: http://localhost:8000
 
 ## Endpoints
 
@@ -70,7 +73,7 @@ A API estará disponível em: http://localhost:8000
 |--------|---------------|-----------------------------------|
 | POST   | /api/transfer | Realiza uma transferência         |
 | GET    | /api/users    | Lista todos os usuários           |
-
+| POST   | /api/user     | Cria usuário                      |
 
 ## Exemplo de requisição
 
@@ -81,5 +84,16 @@ A API estará disponível em: http://localhost:8000
   "value": 100.0,
   "payer": 4,
   "payee": 15
+}
+```
+
+### POST /api/user
+```json
+{
+  "name": "Ana Paula",
+  "cpf_cnpj": "12345678900",
+  "email": "ana@example.com",
+  "password": "senha123",
+  "is_supplier": 0
 }
 ```
