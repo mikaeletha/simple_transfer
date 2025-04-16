@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Services\TransferService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,31 @@ class TransferController extends Controller
         ]);
     }
 
+    // public function transfer(Request $request): JsonResponse
+    // {
+    //     $validator = $this->validateTransfer($request);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['errors' => $validator->errors()], 422);
+    //     }
+
+    //     try {
+    //         $transaction = $this->transferService->transfer(
+    //             $request->input('payer'),
+    //             $request->input('payee'),
+    //             $request->input('value')
+    //         );
+
+    //         return response()->json([
+    //             'message' => 'Transferência realizada com sucesso!',
+    //             'data' => $transaction,
+    //         ]);
+    //     } catch (\DomainException $e) {
+    //         return response()->json(['error' => $e->getMessage()], 422);
+    //     } catch (\Exception $e) {
+    //         return response()->json(['error' => 'Erro interno do servidor.'], 500);
+    //     }
+    // }
     public function transfer(Request $request): JsonResponse
     {
         $validator = $this->validateTransfer($request);
@@ -44,22 +70,16 @@ class TransferController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        try {
-            $transaction = $this->transferService->transfer(
-                $request->input('payer'),
-                $request->input('payee'),
-                $request->input('value')
-            );
+        // Temporariamente sem try/catch
+        $transaction = $this->transferService->transfer(
+            $request->input('payer'),
+            $request->input('payee'),
+            $request->input('value')
+        );
 
-            return response()->json([
-                'message' => 'Transferência realizada com sucesso!',
-                'data' => $transaction,
-            ]);
-        } catch (\DomainException $e) {
-            return response()->json(['error' => $e->getMessage()], 422);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Erro interno do servidor.'], 500);
-        }
+        return response()->json([
+            'message' => 'Transferência realizada com sucesso!',
+            'data' => $transaction,
+        ]);
     }
-
 }
