@@ -45,7 +45,6 @@ class TransferController extends Controller
         }
 
         try {
-            logger()->info('Dados da requisição:', $request->all());
             $transaction = $this->transferService->transfer(
                 $request->input('payer'),
                 $request->input('payee'),
@@ -57,10 +56,8 @@ class TransferController extends Controller
                 'data' => $transaction,
             ]);
         } catch (\DomainException $e) {
-            logger()->error('Erro de domínio:', ['message' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            logger()->error('Erro interno do servidor:', ['message' => $e->getMessage()]);
             return response()->json(['error' => 'Erro interno do servidor.'], 500);
         }
     }
