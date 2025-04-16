@@ -37,7 +37,7 @@ class TransferService
         }
 
         if ($payer->balance < $value) {
-            throw new DomainException('Saldo insuficiente para realizar a transferência. Seu saldo é: R$'.$payer->balance);
+            throw new DomainException('Saldo insuficiente para realizar a transferência. Seu saldo é: R$' . $payer->balance);
         }
 
         if ($payer->id === $payee->id) {
@@ -81,28 +81,16 @@ class TransferService
         ]);
     }
 
-    // private function notifyPayee(Account $payee, float $value): void
-    // {
-    //     try {
-    //         Http::withoutVerifying()->post('https://util.devi.tools/api/v1/notify', [
-    //             'user' => $payee->email,
-    //             'message' => 'Você recebeu um pagamento de R$ ' . number_format($value, 2, ',', '.'),
-    //         ]);
-    //     } catch (\Throwable $e) {
-    //         logger()->warning('Erro ao enviar notificação: ' . $e->getMessage());
-    //     }
-    // }
-
     private function notifyPayee(Account $payee, float $value): void
-{
-    $response = Http::withoutVerifying()->post('https://util.devi.tools/api/v1/notify', [
-        'user' => $payee->email,
-        'message' => 'Você recebeu um pagamento de R$ ' . number_format($value, 2, ',', '.'),
-    ]);
+    {
+        $response = Http::withoutVerifying()->post('https://util.devi.tools/api/v1/notify', [
+            'user' => $payee->email,
+            'message' => 'Você recebeu um pagamento de R$ ' . number_format($value, 2, ',', '.'),
+        ]);
 
-    if (!$response->ok()) {
-        logger()->error('Erro ao enviar notificação. Resposta: ' . $response->body());
-        throw new Exception('Erro ao enviar notificação.');
+        if (!$response->ok()) {
+            logger()->error('Erro ao enviar notificação. Resposta: ' . $response->body());
+            throw new Exception('Erro ao enviar notificação.');
+        }
     }
-}
 }
