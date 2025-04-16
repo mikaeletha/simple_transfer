@@ -81,15 +81,28 @@ class TransferService
         ]);
     }
 
+    // private function notifyPayee(Account $payee, float $value): void
+    // {
+    //     try {
+    //         Http::withoutVerifying()->post('https://util.devi.tools/api/v1/notify', [
+    //             'user' => $payee->email,
+    //             'message' => 'Você recebeu um pagamento de R$ ' . number_format($value, 2, ',', '.'),
+    //         ]);
+    //     } catch (\Throwable $e) {
+    //         logger()->warning('Erro ao enviar notificação: ' . $e->getMessage());
+    //     }
+    // }
+
     private function notifyPayee(Account $payee, float $value): void
-    {
-        try {
-            Http::withoutVerifying()->post('https://util.devi.tools/api/v1/notify', [
-                'user' => $payee->email,
-                'message' => 'Você recebeu um pagamento de R$ ' . number_format($value, 2, ',', '.'),
-            ]);
-        } catch (\Throwable $e) {
-            logger()->warning('Erro ao enviar notificação: ' . $e->getMessage());
-        }
+{
+    $response = Http::withoutVerifying()->post('https://util.devi.tools/api/v1/notify', [
+        'user' => $payee->email,
+        'message' => 'Você recebeu um pagamento de R$ ' . number_format($value, 2, ',', '.'),
+    ]);
+
+    if (!$response->ok()) {
+        logger()->error('Erro ao enviar notificação. Resposta: ' . $response->body());
+        throw new Exception('Erro ao enviar notificação.');
     }
+}
 }
