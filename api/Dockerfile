@@ -1,24 +1,24 @@
-FROM php:8.2-fpm-alpine AS composer
+FROM php:8.2-fpm-alpine
 
-WORKDIR /app
+WORKDIR /var/www
 
-COPY composer.json composer.lock ./
+# Instala dependências e Composer
+RUN apk add --no-cache git sqlite sqlite-dev curl \
+    && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+# Instala extensões necessárias
+RUN docker-php-ext-install pdo pdo_sqlite
 
-FROM nginx:stable-alpine
+# Copia o projeto
+COPY . .
 
-WORKDIR /var/www/html
+# Instala dependências do Laravel
+RUN composer install
 
-COPY --from=composer /app .
-COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
-COPY .env.docker .env
+# Gera chave e limpa cache
+RUN php artisan key:generate \
+    && php artisan optimize:clear
 
-# Certifique-se de que a extensão pdo_sqlite esteja instalada
-RUN docker-php-ext-install pdo_sqlite
+EXPOSE 9000
 
-RUN php artisan optimize:clear
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["php-fpm"]

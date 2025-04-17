@@ -1,53 +1,40 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: app
-    restart: unless-stopped
-    working_dir: /var/www/html
+    working_dir: /var/www
     volumes:
-      - .:/var/www/html
-    environment:
-      - APP_ENVIRONMENT=docker
-      - APP_DEBUG=${APP_DEBUG:-false}
-      - APP_KEY=${APP_KEY}
-      - DB_CONNECTION=sqlite
-      - DB_DATABASE=/var/www/html/database/database.sqlite
-      - CACHE_DRIVER=redis
-      - QUEUE_CONNECTION=redis
-      - REDIS_HOST=redis
-      - REDIS_PASSWORD=null
-      - REDIS_PORT=6379
+      - ./:/var/www
     depends_on:
       - redis
     networks:
-      - app-network
+      - laravel
+    container_name: simple_transfer_app
 
-  web:
-    image: nginx:stable-alpine
-    container_name: web
-    restart: unless-stopped
+  nginx:
+    image: nginx:alpine
     ports:
-      - 8000:80
+      - "8000:80"
     volumes:
-      - .:/var/www/html
+      - ./:/var/www
       - ./docker/nginx:/etc/nginx/conf.d
     depends_on:
       - app
     networks:
-      - app-network
+      - laravel
+    container_name: simple_transfer_web
 
   redis:
     image: redis:alpine
-    container_name: redis
     ports:
-      - 6379:6379
+      - "6379:6379"
     networks:
-      - app-network
+      - laravel
+    container_name: simple_transfer_redis
 
 networks:
-  app-network:
+  laravel:
     driver: bridge
