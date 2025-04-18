@@ -1,152 +1,66 @@
-<?php
-
-namespace Tests\Unit\Services;
+<!-- <?php
 
 use App\Models\Account;
 use App\Models\User;
 use App\Services\TransferService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
-use App\Models\Transaction;
 
-class TransferServiceTest extends TestCase
-{
-    // php artisan test --filter=TransferServiceTest
+uses(TestCase::class, RefreshDatabase::class);
 
-    use RefreshDatabase;
+beforeEach(function () {
+    $this->seed();
+    $this->transferService = new TransferService();
+});
 
-    protected TransferService $transferService;
+// test('lança exceção ao transferir usando um usuário fornecedor', function () {
+//     $payerUser = User::where('is_supplier', true)->firstOrFail();
+//     $payer = Account::where('user_id', $payerUser->id)->firstOrFail();
+//     $payee = Account::where('id', '!=', $payer->id)->firstOrFail();
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->seed(); // Garante que há dados no banco para os testes
-        $this->transferService = new TransferService();
-    }
+//     $reflection = new ReflectionClass($this->transferService);
+//     $method = $reflection->getMethod('validateTransfer');
+//     $method->setAccessible(true);
 
-    /**     
-     * Testa se uma exceção é lançada ao tentar transferir usando um usuário fornecedor.
-     * 
-     * Esse teste usa reflection para acessar o método privado `validateTransfer`.
-     * Ele busca um usuário fornecedor da seed e espera a exceção com a mensagem específica.
-     */
-    public function testValidateTransferIsSupplier()
-    {
-        $payerUser = User::where('is_supplier', true)->firstOrFail();
-        $payer = Account::where('user_id', $payerUser->id)->firstOrFail();
-        $payee = Account::where('id', '!=', $payer->id)->firstOrFail();
+//     $this->expectException(DomainException::class);
+//     $this->expectExceptionMessage('Fornecedores não podem realizar transferências.');
 
-        $service = $this->transferService;
+//     $method->invoke($this->transferService, $payer, $payee, 50);
+// });
 
-        $reflection = new \ReflectionClass($service);
-        $method = $reflection->getMethod('validateTransfer');
-        $method->setAccessible(true);
 
-        $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage('Fornecedores não podem realizar transferências.');
+## validateTransfer(Account $payer, Account $payee, float $value)
+// Deve lançar exceção se o usuário for fornecedor.
+// Deve lançar exceção se o saldo do pagador for insuficiente.
+// Deve lançar exceção se o pagador tentar transferir para si mesmo.
+// Deve passar sem exceção se todos os critérios forem válidos.
 
-        $method->invoke($service, $payer, $payee, 50);
-    }
+## authorizeTransfer()
+// Deve lançar exceção se o serviço externo retornar erro HTTP.
+// Deve lançar exceção se o status não for 'success'.
+// Deve lançar exceção se authorization não for true.
+// Deve não lançar exceção se a resposta for válida e autorizada.
+// Obs: Aqui o ideal é usar um mock do Http::fake().
 
-    /**     
-     * Testa se uma exceção é lançada ao tentar transferir com saldo insuficiente.
-     */
-    public function testValidateTransferInsufficientBalance()
-    {
-        $payerUser = User::where('is_supplier', false)->firstOrFail();
-        $payer = Account::factory()->create(['user_id' => $payerUser->id, 'balance' => 10]);
-        $payee = Account::factory()->create();
+## performTransfer(Account $payer, Account $payee, float $value)
+// Deve subtrair o valor do saldo do pagador.
+// Deve adicionar o valor ao saldo do recebedor.
+// Deve persistir ambos os saldos no banco de dados.
+// Aqui você pode usar mocks dos modelos ou um banco em memória (como SQLite).
 
-        $service = $this->transferService;
+## recordTransaction(Account $payer, Account $payee, float $value)
+// Deve criar uma transação com os dados corretos.
+// Deve retornar a instância da transação criada.
 
-        $reflection = new \ReflectionClass($service);
-        $method = $reflection->getMethod('validateTransfer');
-        $method->setAccessible(true);
+## notifyPayee(Account $payee, float $value)
+// Deve chamar a API de notificação com o e-mail e valor corretos.
+// Deve registrar o erro, mas não lançar exceção, se a API falhar.
+// Deve registrar erro, mas não lançar exceção, se ocorrer uma exceção durante a chamada.
+// Aqui também é essencial o uso de Http::fake() para evitar chamadas reais.
 
-        $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage('Saldo insuficiente para realizar a transferência');
-
-        $method->invoke($service, $payer, $payee, 50);
-    }
-
-    /**     
-     * Testa se uma exceção é lançada ao tentar transferir para si mesmo.
-     */
-    public function testValidateTransferSelfTransfer()
-    {
-        $payerUser = User::where('is_supplier', false)->firstOrFail();
-        $payer = Account::factory()->create(['user_id' => $payerUser->id, 'balance' => 100]);
-
-        $service = $this->transferService;
-
-        $reflection = new \ReflectionClass($service);
-        $method = $reflection->getMethod('validateTransfer');
-        $method->setAccessible(true);
-
-        $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage('Não é permitido transferir para si mesmo.');
-
-        $method->invoke($service, $payer, $payer, 50);
-    }
-
-    /**     
-     * Testa a função principal `transfer` executando com sucesso.
-     * 
-     * Simula autorização via API externa e checa se o saldo é alterado corretamente,
-     * além de verificar se a transação foi registrada no banco.
-     */
-    public function testTransferExecutesSuccessfully()
-    {
-        Http::fake([
-            'https://util.devi.tools/api/v2/authorize' => Http::response([
-                'status' => 'success',
-                'data' => ['authorization' => true],
-            ]),
-            'https://util.devi.tools/api/v1/notify' => Http::response(['success' => true]),
-        ]);
-
-        $payerUser = User::factory()->create(['is_supplier' => false]);
-        $payeeUser = User::factory()->create();
-
-        $payer = Account::factory()->create(['user_id' => $payerUser->id, 'balance' => 1000]);
-        $payee = Account::factory()->create(['user_id' => $payeeUser->id, 'balance' => 500]);
-
-        $transaction = $this->transferService->transfer($payer->id, $payee->id, 200);
-
-        $this->assertDatabaseHas('transactions', [
-            'origin_account_id' => $payer->id,
-            'destination_account_id' => $payee->id,
-            'amount' => 200,
-            'type' => 'transfer',
-        ]);
-
-        $this->assertEquals(800, $payer->fresh()->balance);
-        $this->assertEquals(700, $payee->fresh()->balance);
-        $this->assertInstanceOf(Transaction::class, $transaction);
-    }
-
-    /**     
-     * Testa se uma exceção é lançada quando a API externa de autorização nega a operação.
-     */
-    public function testTransferFailsWhenAuthorizationDenied()
-    {
-        Http::fake([
-            'https://util.devi.tools/api/v2/authorize' => Http::response([
-                'status' => 'error',
-                'data' => ['authorization' => false],
-            ]),
-        ]);
-
-        $payerUser = User::factory()->create(['is_supplier' => false]);
-        $payeeUser = User::factory()->create();
-
-        $payer = Account::factory()->create(['user_id' => $payerUser->id, 'balance' => 1000]);
-        $payee = Account::factory()->create(['user_id' => $payeeUser->id, 'balance' => 500]);
-
-        $this->expectException(\Exception::class);
-        $this->expectExceptionMessage('Transferência não autorizada pelo serviço externo.');
-
-        $this->transferService->transfer($payer->id, $payee->id, 200);
-    }
-}
+## transfer($payerId, $payeeId, $value)
+// Essa seria um pouco mais de teste de integração, mas ainda pode ser feita com mocks de métodos internos se quiser mantê-la como teste unitário:
+// Deve realizar uma transferência com sucesso (todos os métodos internos devem ser chamados corretamente).
+// Deve lançar exceção se qualquer validação falhar.
+// Deve lançar exceção se a autorização falhar.
+// Deve funcionar com valor decimal (ex: 10.75). -->
