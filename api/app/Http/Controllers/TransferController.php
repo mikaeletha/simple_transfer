@@ -36,32 +36,6 @@ class TransferController extends Controller
             'value.min' => 'O valor mínimo para transferência é 0.01.',
         ]);
     }
-
-    // public function transfer(Request $request): JsonResponse
-    // {
-    //     $validator = $this->validateTransfer($request);
-
-    //     if ($validator->fails()) {
-    //         return response()->json(['errors' => $validator->errors()], 422);
-    //     }
-
-    //     try {
-    //         $transaction = $this->transferService->transfer(
-    //             $request->input('payer'),
-    //             $request->input('payee'),
-    //             $request->input('value')
-    //         );
-
-    //         return response()->json([
-    //             'message' => 'Transferência realizada com sucesso!',
-    //             'data' => $transaction,
-    //         ]);
-    //     } catch (\DomainException $e) {
-    //         return response()->json(['error' => $e->getMessage()], 422);
-    //     } catch (\Exception $e) {
-    //         return response()->json(['error' => 'Erro interno do servidor.'], 500);
-    //     }
-    // }
     public function transfer(Request $request): JsonResponse
     {
         $validator = $this->validateTransfer($request);
@@ -70,16 +44,26 @@ class TransferController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Temporariamente sem try/catch
-        $transaction = $this->transferService->transfer(
-            $request->input('payer'),
-            $request->input('payee'),
-            $request->input('value')
-        );
+        try {
+            $transaction = $this->transferService->transfer(
+                $request->input('payer'),
+                $request->input('payee'),
+                $request->input('value')
+            );
 
-        return response()->json([
-            'message' => 'Transferência realizada com sucesso!',
-            'data' => $transaction,
-        ]);
+            return response()->json([
+                'message' => 'Transferência realizada com sucesso!',
+                'data' => $transaction,
+            ]);
+        } catch (\DomainException $e) {
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Erro interno no servidor.',
+                'error' => $e->getMessage() // pode ocultar isso em produção
+            ], 500);
+        }
     }
 }
