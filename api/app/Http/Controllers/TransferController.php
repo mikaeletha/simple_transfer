@@ -65,7 +65,7 @@ class TransferController extends Controller
                 'message' => $e->getMessage()
             ], 403);
         } catch (\Throwable $e) {
-            logger()->error('Erro inesperado na transferência: ' . $e->getMessage());
+            // logger()->error('Erro inesperado na transferência: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Erro interno no servidor.',
