@@ -97,3 +97,14 @@ php artisan serve
   "is_supplier": 0
 }
 ```
+
+## Testes
+1. Criar tabelas 
+```bash
+php artisan migrate --env=testing
+```
+
+2. Popular com dados ficticios
+```bash
+php artisan db:seed --env=testing
+```

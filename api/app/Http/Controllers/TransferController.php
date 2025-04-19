@@ -36,6 +36,7 @@ class TransferController extends Controller
             'value.min' => 'O valor mínimo para transferência é 0.01.',
         ]);
     }
+
     public function transfer(Request $request): JsonResponse
     {
         $validator = $this->validateTransfer($request);
@@ -54,15 +55,21 @@ class TransferController extends Controller
             return response()->json([
                 'message' => 'Transferência realizada com sucesso!',
                 'data' => $transaction,
-            ]);
+            ], 201);
         } catch (\DomainException $e) {
             return response()->json([
                 'message' => $e->getMessage()
             ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => $e->getMessage()
+            ], 403);
         } catch (\Throwable $e) {
+            // logger()->error('Erro inesperado na transferência: ' . $e->getMessage());
+
             return response()->json([
                 'message' => 'Erro interno no servidor.',
-                'error' => $e->getMessage() // pode ocultar isso em produção
+                'error' => $e->getMessage()
             ], 500);
         }
     }

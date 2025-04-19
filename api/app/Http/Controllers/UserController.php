@@ -51,7 +51,8 @@ class UserController extends Controller
 
     public function getUsers(): JsonResponse
     {
-        return response()->json([$this->userService->getCustomUserList()]);
+        // return response()->json([$this->userService->getCustomUserList()]);
+        return response()->json($this->userService->getCustomUserList());
     }
 
     public function create(Request $request): JsonResponse
